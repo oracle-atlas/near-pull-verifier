@@ -10,6 +10,7 @@ use near_sdk::store::LookupSet;
 use near_sdk::{AccountId, BorshStorageKey, PanicOnDefault, env, near, require};
 
 mod events;
+pub mod ext;
 mod hex;
 mod payload;
 mod types;
@@ -97,6 +98,7 @@ impl Contract {
 
     /// Whether the given EVM address is an authorized signer.
     ///
+    /// # Arguments
     /// * `evm_address_hex` - a `0x`-prefixed 40-hex-char EVM address.
     pub fn is_signer(&self, evm_address_hex: String) -> bool {
         self.authorized_signers
