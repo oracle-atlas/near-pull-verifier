@@ -1,14 +1,26 @@
 //! Cross-contract interface for the Pull Verifier.
 //!
-//! On-chain consumer contracts depend on this crate and use `ext_pull_verifier`
-//! to call the verifier in a type-safe way (async Promise + callback). This
-//! module contains only method signatures — no contract logic — mirroring the
-//! public API in `lib.rs`.
+//! Mirrors the verifier's public view methods — method names and parameter
+//! types must match exactly for the Promise call to resolve correctly.
 
-use near_sdk::{AccountId, ext_contract};
+use near_sdk::{AccountId, ext_contract, json_types::U128, near};
 
-use crate::{FeedData, types::Seconds};
+/// A duration or timestamp expressed in whole seconds. Serializes as `u64`.
+pub type Seconds = u64;
 
+/// A single decoded Feed Data package: price + aggregation timestamp.
+///
+/// Must match the verifier's `FeedData` borsh layout (same field order and
+/// types) so the cross-contract callback can decode the result correctly.
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FeedData {
+    pub price: U128,
+    pub timestamp: Seconds,
+}
+// The trait itself is only consumed by the #[ext_contract] macro.
+#[allow(dead_code)]
+// The generated `ext_pull_verifier` module is what callers use.
 #[ext_contract(ext_pull_verifier)]
 pub trait PullVerifier {
     /// Return the feed matching `feed_id`, verifying the payload and the feed's
@@ -40,7 +52,7 @@ pub trait PullVerifier {
         max_future_drift: Seconds,
     ) -> Option<FeedData>;
 
-    /// Batch [`Contract::get_verified_feed_data`]: authenticate the payload once,
+    /// Batch [`PullVerifier::get_verified_feed_data`]: authenticate the payload once,
     /// then look up each id in `feed_ids`.
     ///
     /// # Arguments
@@ -71,8 +83,8 @@ pub trait PullVerifier {
     ///
     /// The payload is still fully authenticated (signature + authorized signer),
     /// so the data's origin is trusted — but its timestamp is NOT validated, so
-    /// it may be stale. Prefer [`Contract::get_verified_feed_data`] unless you
-    /// need to apply your own freshness policy.
+    /// it may be stale. Prefer [`PullVerifier::get_verified_feed_data`] unless
+    /// you need to apply your own freshness policy.
     ///
     /// # Arguments
     /// * `feed_id` - a `0x`-prefixed 8-hex-char string (EVM `bytes4`)
@@ -92,7 +104,7 @@ pub trait PullVerifier {
         max_package_count: u8,
     ) -> Option<FeedData>;
 
-    /// Batch [`Contract::get_feed_data_unchecked`]: authenticate the payload once,
+    /// Batch [`PullVerifier::get_feed_data_unchecked`]: authenticate the payload once,
     /// then look up each id in `feed_ids` WITHOUT a freshness check.
     ///
     /// # Arguments
@@ -120,5 +132,6 @@ pub trait PullVerifier {
     /// * `evm_address_hex` - a `0x`-prefixed 40-hex-char EVM address.
     fn is_signer(&self, evm_address_hex: String) -> bool;
 
+    /// Current owner account.
     fn get_owner(&self) -> AccountId;
 }

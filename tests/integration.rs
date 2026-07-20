@@ -1,8 +1,8 @@
-use alloy::primitives::keccak256;
-use alloy::signers::SignerSync;
-use alloy::signers::local::PrivateKeySigner;
-use near_api::AccountId;
-use near_api::NearToken;
+use alloy::{
+    primitives::keccak256,
+    signers::{SignerSync, local::PrivateKeySigner},
+};
+use near_api::{AccountId, NearToken};
 use near_sdk::serde_json::json;
 
 /// The signer's EVM address as a `0x`-prefixed hex string (keccak256(pubkey)[12..]).

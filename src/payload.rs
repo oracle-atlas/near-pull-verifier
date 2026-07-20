@@ -16,8 +16,7 @@
 //! Signed data = Packages || Count; the Signature (r||s||v, Ethereum v 27/28)
 //! and Magic Marker are not part of the signed data.
 
-use near_sdk::json_types::U128;
-use near_sdk::{env, require};
+use near_sdk::{env, json_types::U128, require};
 
 use crate::hex::from_hex;
 use crate::types::{EVM_ADDRESS_LEN, EvmAddress, FeedData, Secp256k1PublicKey};

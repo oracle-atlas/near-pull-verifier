@@ -1,7 +1,7 @@
 [package]
-name = "pull-verifier"
-description = "NEAR pull-oracle price payload verifier (stateless view)"
-version = "1.0.0"
+name = "consumer"
+description = "Example consumer contract for the Pull Verifier (cross-contract call pattern)"
+version = "0.1.0"
 edition = "2024"
 resolver = "3"
 rust-version = "1.93"
@@ -38,21 +38,19 @@ container_build_command = [
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-near-sdk = { version = "=5.28.3", features = ["unstable"] }
+near-sdk = "=5.28.3"
 
 [dev-dependencies]
-near-sdk = { version = "=5.28.3", features = ["unit-testing", "unstable"] }
+near-sdk = { version = "=5.28.3", features = ["unit-testing"] }
 near-sandbox = "0.3.11"
 near-api = "0.8"
 cargo-near-build = "0.11.0"
 tokio = { version = "1.12.0", features = ["full"] }
 testresult = "0.4.1"
-hex = "0.4"
 alloy = { version = "2.1.1", default-features = false, features = [
-    "signers",
     "signer-local",
 ] }
-k256 = { version = "0.13", features = ["ecdsa"] }
+hex = "0.4"
 
 [profile.release]
 codegen-units = 1

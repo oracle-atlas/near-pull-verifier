@@ -6,20 +6,21 @@
 //! ECDSA signature, checks it is authorized, then returns the requested feed.
 //!
 //! Payload layout and signature scheme are documented in the `payload` module.
-use near_sdk::store::LookupSet;
-use near_sdk::{AccountId, BorshStorageKey, PanicOnDefault, env, near, require};
-
 mod events;
 pub mod ext;
 mod hex;
 mod payload;
 mod types;
 
+use near_sdk::{AccountId, BorshStorageKey, PanicOnDefault, env, near, require, store::LookupSet};
+
+use crate::{
+    hex::from_hex,
+    payload::parse_feed_id,
+    types::{EvmAddress, Seconds, parse_evm_address},
+};
 use events::ContractEvent;
-use hex::from_hex;
-use payload::parse_feed_id;
 pub use types::FeedData;
-use types::{EvmAddress, Seconds, parse_evm_address};
 
 #[derive(BorshStorageKey)]
 #[near]
@@ -369,7 +370,7 @@ mod tests {
     }
 
     fn contract_for(signer: &PrivateKeySigner) -> Contract {
-        Contract::new(accounts(0), vec![address_of(signer)])
+        Contract::new(accounts(0), vec![address_of(&signer)])
     }
 
     fn set_ctx_as(who: AccountId) {

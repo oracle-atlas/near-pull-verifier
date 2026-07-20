@@ -1,7 +1,6 @@
 //! Shared types, constants, and helpers used across the verifier.
 
-use near_sdk::json_types::U128;
-use near_sdk::{near, require};
+use near_sdk::{json_types::U128, near, require};
 
 use crate::hex::from_hex;
 

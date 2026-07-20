@@ -33,3 +33,11 @@ size-only:
 # Remove build artifacts.
 clean:
     cargo clean
+
+# Build the consumer example contract.
+build-consumer:
+    cargo near build non-reproducible-wasm --manifest-path examples/consumer/Cargo.toml
+
+# Run consumer end-to-end tests (requires verifier wasm to exist).
+test-consumer: build build-consumer
+    cargo test --manifest-path examples/consumer/Cargo.toml
