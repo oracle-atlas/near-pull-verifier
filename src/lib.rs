@@ -7,7 +7,6 @@
 //!
 //! Payload layout and signature scheme are documented in the `payload` module.
 mod events;
-pub mod ext;
 mod hex;
 mod payload;
 mod types;
@@ -30,7 +29,7 @@ enum StorageKey {
 
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
-pub struct Contract {
+pub struct PullVerifier {
     /// Account allowed to manage authorized signers.
     owner: AccountId,
     /// Authorized oracle signer EVM addresses.
@@ -38,7 +37,7 @@ pub struct Contract {
 }
 
 #[near]
-impl Contract {
+impl PullVerifier {
     /// Initialize the verifier.
     ///
     /// # Arguments
@@ -172,7 +171,7 @@ impl Contract {
             .then_some(feed)
     }
 
-    /// Batch [`Contract::get_verified_feed_data`]: authenticate the payload once,
+    /// Batch [`PullVerifier::get_verified_feed_data`]: authenticate the payload once,
     /// then look up each id in `feed_ids`.
     ///
     /// # Arguments
@@ -210,7 +209,7 @@ impl Contract {
     ///
     /// The payload is still fully authenticated (signature + authorized signer),
     /// so the data's origin is trusted — but its timestamp is NOT validated, so
-    /// it may be stale. Prefer [`Contract::get_verified_feed_data`] unless you
+    /// it may be stale. Prefer [`PullVerifier::get_verified_feed_data`] unless you
     /// need to apply your own freshness policy.
     ///
     /// # Arguments
@@ -233,7 +232,7 @@ impl Contract {
         self.find_authenticated_feed(&feed_id, &payload, max_package_count)
     }
 
-    /// Batch [`Contract::get_feed_data_unchecked`]: authenticate the payload once,
+    /// Batch [`PullVerifier::get_feed_data_unchecked`]: authenticate the payload once,
     /// then look up each id in `feed_ids` WITHOUT a freshness check.
     ///
     /// # Arguments
@@ -369,8 +368,8 @@ mod tests {
         format!("0x{}", hex_encode(expected_address(signer)))
     }
 
-    fn contract_for(signer: &PrivateKeySigner) -> Contract {
-        Contract::new(accounts(0), vec![address_of(&signer)])
+    fn contract_for(signer: &PrivateKeySigner) -> PullVerifier {
+        PullVerifier::new(accounts(0), vec![address_of(&signer)])
     }
 
     fn set_ctx_as(who: AccountId) {
@@ -384,7 +383,7 @@ mod tests {
         #[test]
         fn stores_owner_and_authorized_signers() {
             let sk = fixed_key();
-            let contract = Contract::new(accounts(0), vec![address_of(&sk)]);
+            let contract = PullVerifier::new(accounts(0), vec![address_of(&sk)]);
 
             assert_eq!(contract.get_owner(), accounts(0));
             assert!(contract.is_signer(address_of(&sk)));
@@ -405,7 +404,7 @@ mod tests {
         fn authorizes_multiple_signers() {
             let sk1 = fixed_key();
             let sk2 = key_from_byte(3);
-            let contract = Contract::new(accounts(0), vec![address_of(&sk1), address_of(&sk2)]);
+            let contract = PullVerifier::new(accounts(0), vec![address_of(&sk1), address_of(&sk2)]);
 
             assert!(contract.is_signer(address_of(&sk1)));
             assert!(contract.is_signer(address_of(&sk2)));
@@ -427,7 +426,7 @@ mod tests {
 
         #[test]
         fn empty_signers_authorizes_none() {
-            let contract = Contract::new(accounts(0), vec![]);
+            let contract = PullVerifier::new(accounts(0), vec![]);
 
             // No signer is authorized; a well-formed address still returns false.
             let sk = fixed_key();
@@ -447,7 +446,7 @@ mod tests {
             set_ctx_as(accounts(0));
             // 19-byte address (38 hex chars) is rejected by parse_evm_address.
             let bad = format!("0x{}", hex_encode([0u8; EVM_ADDRESS_LEN - 1]));
-            let _ = Contract::new(accounts(0), vec![bad]);
+            let _ = PullVerifier::new(accounts(0), vec![bad]);
         }
     }
 

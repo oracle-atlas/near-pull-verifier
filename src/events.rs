@@ -1,5 +1,3 @@
-//! NEP-297 contract events.
-
 use near_sdk::{AccountId, near};
 
 #[near(event_json(standard = "pull_verifier"))]
