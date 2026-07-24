@@ -5,9 +5,6 @@ version = "1.0.0"
 edition = "2024"
 resolver = "3"
 rust-version = "1.93"
-# TODO: Fill out the repository field to help NEAR ecosystem tools to discover your project.
-# NEP-0330 is automatically implemented for all contracts built with https://github.com/near/cargo-near.
-# Link to the repository will be available via `contract_source_metadata` view-function.
 repository = "https://github.com/oracle-atlas/near-pull-verifier"
 
 [lib]

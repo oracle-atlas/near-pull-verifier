@@ -67,7 +67,12 @@ fn assert_log_contains(logs: &[&str], prefix: &str) {
 async fn test_consumer_e2e() -> testresult::TestResult<()> {
     let consumer_wasm_path = cargo_near_build::build_with_cli(Default::default())?;
     let consumer_wasm = std::fs::read(consumer_wasm_path)?;
-    let verifier_wasm = std::fs::read("../../target/near/pull_verifier.wasm")?;
+    let verifier_wasm_path = cargo_near_build::build_with_cli(
+        cargo_near_build::BuildOpts::builder()
+            .manifest_path("../../Cargo.toml")
+            .build(),
+    )?;
+    let verifier_wasm = std::fs::read(verifier_wasm_path)?;
 
     let sandbox = near_sandbox::Sandbox::start_sandbox().await?;
     let sandbox_network =

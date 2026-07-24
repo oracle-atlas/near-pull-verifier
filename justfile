@@ -38,6 +38,6 @@ clean:
 build-consumer:
     cargo near build non-reproducible-wasm --manifest-path examples/consumer/Cargo.toml
 
-# Run consumer end-to-end tests (requires verifier wasm to exist).
-test-consumer: build build-consumer
+# Run consumer end-to-end tests (both wasms are built by the test itself).
+test-consumer:
     cargo test --manifest-path examples/consumer/Cargo.toml
