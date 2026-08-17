@@ -312,15 +312,12 @@ impl PullVerifier {
 
         let payload: Vec<u8> = from_hex(payload);
         let now: Seconds = env::block_timestamp() / 1_000_000_000; // ns -> s
+        let packages_end = self.authenticate(&payload, max_package_count);
 
         feed_ids
             .iter()
             .map(|feed_id| {
-                let feed = payload::find_feed(
-                    &payload,
-                    self.authenticate(&payload, max_package_count),
-                    &parse_feed_id(feed_id),
-                );
+                let feed = payload::find_feed(&payload, packages_end, &parse_feed_id(feed_id));
                 match timeliness_bounds {
                     Some((max_delay, max_future_drift)) => {
                         feed.filter(|f| f.is_timely(now, max_delay, max_future_drift))
