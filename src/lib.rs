@@ -11,7 +11,10 @@ mod hex;
 mod payload;
 mod types;
 
-use near_sdk::{AccountId, BorshStorageKey, PanicOnDefault, env, near, require, store::LookupSet};
+use near_sdk::{
+    AccountId, BorshStorageKey, PanicOnDefault, assert_one_yocto, env, near, require,
+    store::LookupSet,
+};
 
 use crate::{
     hex::from_hex,
@@ -75,7 +78,9 @@ impl PullVerifier {
     /// * `evm_address_hex` - the signer EVM address, a `0x`-prefixed 40-hex-char
     ///   string (the `0x` prefix is required).
     /// * `add` - `true` to add, `false` to remove.
+    #[payable]
     pub fn set_signer(&mut self, evm_address_hex: String, add: bool) {
+        assert_one_yocto();
         require!(
             env::predecessor_account_id() == self.owner,
             "Only the owner can set the signer"
@@ -117,7 +122,9 @@ impl PullVerifier {
     ///
     /// # Arguments
     /// * `new_owner` - the account to become the new owner.
+    #[payable]
     pub fn transfer_ownership(&mut self, new_owner: AccountId) {
+        assert_one_yocto();
         require!(
             env::predecessor_account_id() == self.owner,
             "Only the owner can transfer ownership"
@@ -332,9 +339,11 @@ mod tests {
     use crate::types::EVM_ADDRESS_LEN;
     use ::hex::encode as hex_encode;
     use alloy::signers::local::PrivateKeySigner;
-    use near_sdk::json_types::U128;
-    use near_sdk::test_utils::{VMContextBuilder, accounts};
-    use near_sdk::testing_env;
+    use near_sdk::{
+        json_types::U128,
+        test_utils::{VMContextBuilder, accounts, get_logs},
+        testing_env,
+    };
     use payload::{META_TAIL_LEN, MIN_PAYLOAD_LEN};
 
     const MAX_PACKAGE_COUNT: u8 = 32;
@@ -372,9 +381,13 @@ mod tests {
         PullVerifier::new(accounts(0), vec![address_of(&signer)])
     }
 
-    fn set_ctx_as(who: AccountId) {
-        let ctx = VMContextBuilder::new().predecessor_account_id(who).build();
-        testing_env!(ctx);
+    fn set_ctx_as_with_1_yocto(who: AccountId) {
+        testing_env!(
+            VMContextBuilder::new()
+                .predecessor_account_id(who)
+                .attached_deposit(near_sdk::NearToken::from_yoctonear(1))
+                .build()
+        );
     }
 
     mod new {
@@ -390,7 +403,7 @@ mod tests {
 
             // Events: one SignerStatusChanged for the signer, plus the initial
             // OwnershipTransferred (old_owner = null).
-            let logs = near_sdk::test_utils::get_logs();
+            let logs = get_logs();
             assert_eq!(logs.len(), 2);
             assert!(logs[0].contains(r#""event":"signer_status_changed""#));
             assert!(logs[0].contains(r#""added":true"#));
@@ -411,7 +424,7 @@ mod tests {
 
             // Events: one SignerStatusChanged per signer (in order), plus the
             // initial OwnershipTransferred.
-            let logs = near_sdk::test_utils::get_logs();
+            let logs = get_logs();
             assert_eq!(logs.len(), 3);
             assert!(logs[0].contains(r#""event":"signer_status_changed""#));
             assert!(logs[0].contains(r#""added":true"#));
@@ -433,7 +446,7 @@ mod tests {
             assert!(!contract.is_signer(address_of(&sk)));
 
             // Only one log: the initial OwnershipTransferred (no signer events).
-            let logs = near_sdk::test_utils::get_logs();
+            let logs = get_logs();
             assert_eq!(logs.len(), 1);
             assert!(logs[0].contains(r#""event":"ownership_transferred""#));
             assert!(logs[0].contains(r#""old_owner":null"#));
@@ -443,7 +456,6 @@ mod tests {
         #[test]
         #[should_panic(expected = "Signer address must be 20 bytes")]
         fn malformed_signer_address_panics() {
-            set_ctx_as(accounts(0));
             // 19-byte address (38 hex chars) is rejected by parse_evm_address.
             let bad = format!("0x{}", hex_encode([0u8; EVM_ADDRESS_LEN - 1]));
             let _ = PullVerifier::new(accounts(0), vec![bad]);
@@ -463,20 +475,20 @@ mod tests {
             let new_addr = address_of(&new_sk);
             assert!(!contract.is_signer(new_addr.clone()));
 
-            set_ctx_as(accounts(0));
+            set_ctx_as_with_1_yocto(accounts(0));
             contract.set_signer(new_addr.clone(), true);
             assert!(contract.is_signer(new_addr.clone()));
-            let mut logs = near_sdk::test_utils::get_logs();
+            let mut logs = get_logs();
             assert_eq!(logs.len(), 1);
             assert!(logs[0].contains(r#""event":"signer_status_changed""#));
             assert!(logs[0].contains(r#""added":true"#));
             assert!(logs[0].contains(&new_addr));
 
             // Remove it again.
-            set_ctx_as(accounts(0));
+            set_ctx_as_with_1_yocto(accounts(0));
             contract.set_signer(new_addr.clone(), false);
             assert!(!contract.is_signer(new_addr.clone()));
-            logs = near_sdk::test_utils::get_logs();
+            logs = get_logs();
             assert_eq!(logs.len(), 1);
             assert!(logs[0].contains(r#""event":"signer_status_changed""#));
             assert!(logs[0].contains(r#""added":false"#));
@@ -489,7 +501,7 @@ mod tests {
             let sk = fixed_key();
             let mut contract = contract_for(&sk);
 
-            set_ctx_as(accounts(2)); // not the owner (owner is accounts(0))
+            set_ctx_as_with_1_yocto(accounts(2)); // not the owner (owner is accounts(0))
             contract.set_signer(address_of(&sk), true);
         }
 
@@ -500,7 +512,7 @@ mod tests {
             let mut contract = contract_for(&sk); // sk is already authorized via new()
 
             // Re-adding an already-authorized signer is a no-op change -> revert.
-            set_ctx_as(accounts(0));
+            set_ctx_as_with_1_yocto(accounts(0));
             contract.set_signer(address_of(&sk), true);
         }
 
@@ -510,7 +522,7 @@ mod tests {
             let sk = fixed_key();
             let mut contract = contract_for(&sk);
             // Removing a never-authorized address is a no-op change -> revert.
-            set_ctx_as(accounts(0));
+            set_ctx_as_with_1_yocto(accounts(0));
             let other = key_from_byte(1);
             contract.set_signer(address_of(&other), false);
         }
@@ -524,13 +536,13 @@ mod tests {
             let sk = fixed_key();
             let mut contract = contract_for(&sk);
 
-            set_ctx_as(accounts(0));
+            set_ctx_as_with_1_yocto(accounts(0));
             contract.transfer_ownership(accounts(3));
 
             // Owner is updated.
             assert_eq!(contract.get_owner(), accounts(3));
 
-            let logs = near_sdk::test_utils::get_logs();
+            let logs = get_logs();
             assert_eq!(logs.len(), 1);
             assert!(logs[0].contains(r#""event":"ownership_transferred""#));
             assert!(logs[0].contains(accounts(0).as_str())); // old_owner
@@ -543,11 +555,11 @@ mod tests {
             let sk = fixed_key();
             let mut contract = contract_for(&sk);
 
-            set_ctx_as(accounts(0));
+            set_ctx_as_with_1_yocto(accounts(0));
             contract.transfer_ownership(accounts(3));
 
             // The new owner can now manage signers.
-            set_ctx_as(accounts(3));
+            set_ctx_as_with_1_yocto(accounts(3));
             let new_addr = format!("0x{}", hex_encode([2u8; EVM_ADDRESS_LEN]));
             contract.set_signer(new_addr.clone(), true);
             assert!(contract.is_signer(new_addr));
@@ -558,7 +570,7 @@ mod tests {
         fn by_non_owner_fails() {
             let sk = fixed_key();
             let mut contract = contract_for(&sk);
-            set_ctx_as(accounts(2));
+            set_ctx_as_with_1_yocto(accounts(2));
             contract.transfer_ownership(accounts(3));
         }
 
@@ -568,7 +580,7 @@ mod tests {
             let sk = fixed_key();
             let mut contract = contract_for(&sk);
 
-            set_ctx_as(accounts(0));
+            set_ctx_as_with_1_yocto(accounts(0));
             contract.transfer_ownership(accounts(3));
 
             // The old owner (accounts(0)) can no longer manage signers.
@@ -580,7 +592,7 @@ mod tests {
         fn to_same_owner_fails() {
             let sk = fixed_key();
             let mut contract = contract_for(&sk);
-            set_ctx_as(accounts(0));
+            set_ctx_as_with_1_yocto(accounts(0));
             contract.transfer_ownership(accounts(0));
         }
     }
