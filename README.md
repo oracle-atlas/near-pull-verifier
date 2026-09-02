@@ -57,6 +57,14 @@ Vec<Option<FeedData>> = [length: u32 LE][entry]...   (batch getters)
 > - **Panics (reverts)** on an invalid payload — bad framing, an invalid or non-canonical signature, or an unauthorized signer. Treat an RPC error as "invalid/untrusted payload".
 > - **Returns `None`** when the payload is valid but has no usable feed — the `feed_id` is absent, or its timestamp is out of range. Callers can fall back or skip.
 
+## Signature trust domain
+
+All deployments and consumer contracts that verify this payload share a single **signature trust domain**: a payload signed by an authorized signer is accepted anywhere that signer is trusted.
+
+Consumer contracts that verify and parse the payload themselves embed the signer address locally, so when the oracle rotates or revokes a signer they must update their own contract to stay in sync — this drift across deployments during rotation is expected.
+
+Because the same signature is trusted across the whole domain, we keep the signing key dedicated to this Pull Oracle payload format and do not reuse it for other protocols or other message formats.
+
 ## Building a consumer contract
 
 NEAR cross-contract calls are asynchronous: a consumer dispatches a Promise to the verifier and reads the result in a callback. See [`examples/consumer`](https://github.com/oracle-atlas/near-pull-verifier/tree/main/examples/consumer) for a complete, runnable reference implementation.
