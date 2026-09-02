@@ -141,8 +141,6 @@ async fn test_consumer_e2e() -> testresult::TestResult<()> {
             json!({
                 "payload": payload_hex,
                 "feed_id": "0x00000001",
-                "max_delay": 10u64,
-                "max_future_drift": 10u64,
             }),
         )
         .transaction()
@@ -180,8 +178,6 @@ async fn test_consumer_e2e() -> testresult::TestResult<()> {
             json!({
                 "payload": payload_hex,
                 "feed_id": "0x00000002",
-                "max_delay": 10u64,
-                "max_future_drift": 10u64,
             }),
         )
         .transaction()
@@ -207,8 +203,6 @@ async fn test_consumer_e2e() -> testresult::TestResult<()> {
             json!({
                 "payload": bad_hex,
                 "feed_id": "0x00000003",
-                "max_delay": 10u64,
-                "max_future_drift": 10u64,
             }),
         )
         .transaction()
@@ -235,8 +229,6 @@ async fn test_consumer_e2e() -> testresult::TestResult<()> {
             json!({
                 "payload": payload_hex,
                 "feed_id": "0x00000004",
-                "max_delay": 10u64,
-                "max_future_drift": 10u64,
             }),
         )
         .transaction()
@@ -262,8 +254,6 @@ async fn test_consumer_e2e() -> testresult::TestResult<()> {
             json!({
                 "payload": payload_hex,
                 "feed_id": "0x00000001",
-                "max_delay": 10u64,
-                "max_future_drift": 10u64,
             }),
         )
         .transaction()
@@ -291,8 +281,6 @@ async fn test_consumer_e2e() -> testresult::TestResult<()> {
             json!({
                 "payload": payload_hex,
                 "feed_id": "0xdeadbeef",
-                "max_delay": 10u64,
-                "max_future_drift": 10u64,
             }),
         )
         .transaction()

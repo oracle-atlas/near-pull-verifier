@@ -15,6 +15,13 @@ use ext::{FeedData, ext_pull_verifier};
 
 const GAS: Gas = Gas::from_tgas(30);
 
+/// Verification policy fixed by this contract: these values decide which
+/// prices `use_price` accepts, so they must never come from user input —
+/// forwarding user values would let callers weaken these checks.
+const MAX_PACKAGE_COUNT: u8 = 32;
+const MAX_DELAY: u64 = 60;
+const MAX_FUTURE_DRIFT: u64 = 10;
+
 #[derive(BorshStorageKey)]
 #[near]
 enum StorageKey {
@@ -43,16 +50,20 @@ impl Consumer {
     /// Pull one feed: verify the payload via the verifier, then store the
     /// result in the callback. Cross-contract calls are async, so the price
     /// is available only after `on_price` runs — query it via `get_feed`.
-    pub fn use_price(
-        &mut self,
-        payload: String,
-        feed_id: String,
-        max_delay: u64,
-        max_future_drift: u64,
-    ) -> Promise {
+    ///
+    /// The verification parameters are fixed by this contract (see
+    /// `MAX_PACKAGE_COUNT` / `MAX_DELAY` / `MAX_FUTURE_DRIFT`) and are never
+    /// taken from user input.
+    pub fn use_price(&mut self, payload: String, feed_id: String) -> Promise {
         ext_pull_verifier::ext(self.verifier.clone())
             .with_static_gas(GAS)
-            .get_verified_feed_data(feed_id.clone(), payload, 32, max_delay, max_future_drift)
+            .get_verified_feed_data(
+                feed_id.clone(),
+                payload,
+                MAX_PACKAGE_COUNT,
+                MAX_DELAY,
+                MAX_FUTURE_DRIFT,
+            )
             .then(
                 Self::ext(env::current_account_id())
                     .with_static_gas(GAS)

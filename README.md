@@ -45,6 +45,8 @@ The four feed getters are the public query API.
 - `max_delay` / `max_future_drift`: bounds (in **seconds**) on the selected feed's timestamp relative to block time — it must fall within `[now - max_delay, now + max_future_drift]`.
 - `feed_id`: which feed to select, a `0x`-prefixed 8-hex-char string (EVM `bytes4`). Feed ids are assigned by the oracle backend — get the id-to-asset registry from the operator.
 
+> `max_package_count`, `max_delay`, and `max_future_drift` are verification policy, not user input: a business contract should fix them itself (hardcoded or admin-configured) and never forward end-user values. An oversized `max_package_count` admits larger signed payloads (resource/DoS surface), an oversized `max_delay` weakens stale-price protection, and an oversized `max_future_drift` weakens future-timestamp protection. `payload` and `feed_id`, by contrast, are safe to accept from callers — the verifier authenticates the payload's signature, and the feed id only selects an entry within it.
+
 The getters return **borsh-encoded** results (`#[result_serializer(borsh)]`), which are cheaper to serialize and deserialize than JSON — saving gas on cross-contract calls. The same bytes reach both RPC view callers and cross-contract callbacks. `FeedData` borsh layout:
 
 ```text

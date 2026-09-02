@@ -153,9 +153,16 @@ impl PullVerifier {
     /// # Arguments
     /// * `feed_id` - a `0x`-prefixed 8-hex-char string (EVM `bytes4`)
     /// * `payload` - the `0x`-prefixed hex-encoded signed payload
-    /// * `max_package_count` - upper bound on the number of packages in the payload
-    /// * `max_delay` - max staleness: how far in the past the timestamp may be
-    /// * `max_future_drift` - max clock skew: how far ahead the timestamp may be
+    /// * `max_package_count` - upper bound on the number of packages the
+    ///   payload may carry. Set it in the calling contract, not from user
+    ///   input, since oversized caps admit larger signed payloads.
+    /// * `max_delay` - how many seconds the feed timestamp may lag the
+    ///   block time. Set it in the calling contract, not from user input,
+    ///   since oversized values weaken stale-price protection.
+    /// * `max_future_drift` - how many seconds the feed timestamp may run
+    ///   ahead of the block time. Set it in the calling contract, not from
+    ///   user input, since oversized values weaken future-timestamp
+    ///   protection.
     ///
     /// # Panics
     /// Panics on an untrusted payload (bad framing, invalid/non-canonical
@@ -185,9 +192,16 @@ impl PullVerifier {
     /// # Arguments
     /// * `feed_ids` - `0x`-prefixed 8-hex-char (EVM `bytes4`) ids to look up
     /// * `payload` - the `0x`-prefixed hex-encoded signed payload
-    /// * `max_package_count` - upper bound on the number of packages in the payload
-    /// * `max_delay` - max staleness: how far in the past a timestamp may be
-    /// * `max_future_drift` - max clock skew: how far ahead a timestamp may be
+    /// * `max_package_count` - upper bound on the number of packages the
+    ///   payload may carry. Set it in the calling contract, not from user
+    ///   input, since oversized caps admit larger signed payloads.
+    /// * `max_delay` - how many seconds the feed timestamp may lag the
+    ///   block time. Set it in the calling contract, not from user input,
+    ///   since oversized values weaken stale-price protection.
+    /// * `max_future_drift` - how many seconds the feed timestamp may run
+    ///   ahead of the block time. Set it in the calling contract, not from
+    ///   user input, since oversized values weaken future-timestamp
+    ///   protection.
     ///
     /// # Panics
     /// Panics (failing the whole call) on an untrusted payload or any malformed
@@ -224,7 +238,9 @@ impl PullVerifier {
     /// # Arguments
     /// * `feed_id` - a `0x`-prefixed 8-hex-char string (EVM `bytes4`)
     /// * `payload` - the `0x`-prefixed hex-encoded signed payload
-    /// * `max_package_count` - upper bound on the number of packages in the payload
+    /// * `max_package_count` - upper bound on the number of packages the
+    ///   payload may carry. Set it in the calling contract, not from user
+    ///   input, since oversized caps admit larger signed payloads.
     ///
     /// # Panics
     /// Panics on an untrusted payload or a malformed `feed_id`.
@@ -248,7 +264,9 @@ impl PullVerifier {
     /// # Arguments
     /// * `feed_ids` - `0x`-prefixed 8-hex-char (EVM `bytes4`) ids to look up
     /// * `payload` - the `0x`-prefixed hex-encoded signed payload
-    /// * `max_package_count` - upper bound on the number of packages in the payload
+    /// * `max_package_count` - upper bound on the number of packages the
+    ///   payload may carry. Set it in the calling contract, not from user
+    ///   input, since oversized caps admit larger signed payloads.
     ///
     /// # Panics
     /// Panics on an untrusted payload or any malformed `feed_id`.
