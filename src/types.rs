@@ -1,6 +1,6 @@
 //! Shared types, constants, and helpers used across the verifier.
 
-use near_sdk::{json_types::U128, near, require};
+use near_sdk::{near, require};
 
 use crate::hex::from_hex;
 
@@ -36,12 +36,15 @@ pub type Seconds = u64;
 
 /// A single decoded Feed Data package: the caller-facing result of a
 /// successful feed lookup (price + aggregation timestamp).
-#[near(serializers = [json, borsh])]
+///
+/// The feed getters return it borsh-encoded; both cross-contract callbacks and
+/// RPC view callers decode the same bytes (`#[serializer(borsh)]` on callbacks).
+#[near(serializers = [borsh])]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FeedData {
     /// Price value (10 bytes, big-endian) carried in a u128.
-    pub price: U128,
-    /// Aggregation timestamp in seconds (6 bytes, big-endian).
+    pub price: u128,
+    /// Aggregation timestamp in seconds (6 bytes, big-endian) carried in a `Seconds`.
     pub timestamp: Seconds,
 }
 
@@ -67,7 +70,7 @@ mod tests {
 
     fn feed_at(timestamp: Seconds) -> FeedData {
         FeedData {
-            price: U128(0),
+            price: 0,
             timestamp,
         }
     }

@@ -4,6 +4,7 @@ use alloy::{
 };
 use near_api::{AccountId, NearToken};
 use near_sdk::serde_json::json;
+use pull_verifier::FeedData;
 
 /// The signer's EVM address as a `0x`-prefixed hex string (keccak256(pubkey)[12..]).
 fn address_of(signer: &PrivateKeySigner) -> String {
@@ -39,13 +40,6 @@ fn build_payload(signer: &PrivateKeySigner, feeds: &[(u32, u128, u64)]) -> Vec<u
     payload.extend_from_slice(&sig);
     payload.extend_from_slice(&[0x70, 0x96]); // magic marker = keccak256("ATLAS")[..2]
     payload
-}
-
-#[derive(near_sdk::serde::Deserialize, Debug)]
-#[serde(crate = "near_sdk::serde")]
-struct FeedData {
-    price: near_sdk::json_types::U128,
-    timestamp: u64,
 }
 
 async fn test_verifier_on(contract_wasm: Vec<u8>) -> testresult::TestResult<()> {
@@ -135,13 +129,13 @@ async fn test_verifier_on(contract_wasm: Vec<u8>) -> testresult::TestResult<()> 
                 "max_package_count": 32,
             }),
         )
-        .read_only()
+        .read_only_borsh()
         .fetch_from(&sandbox_network)
         .await?
         .data;
 
     let feed = feed.expect("feed should be present and fresh");
-    assert_eq!(feed.price.0, 123_456);
+    assert_eq!(feed.price, 123_456);
     assert_eq!(feed.timestamp, now);
 
     // Batch: authenticate once, look up several ids, index-aligned.
@@ -156,14 +150,14 @@ async fn test_verifier_on(contract_wasm: Vec<u8>) -> testresult::TestResult<()> 
                 "max_future_drift": 10u64,
             }),
         )
-        .read_only()
+        .read_only_borsh()
         .fetch_from(&sandbox_network)
         .await?
         .data;
 
     assert_eq!(batch.len(), 3);
     let f1 = batch[0].as_ref().expect("feed 1 present");
-    assert_eq!(f1.price.0, 123_456);
+    assert_eq!(f1.price, 123_456);
     assert_eq!(f1.timestamp, now);
     assert!(batch[1].is_none()); // 0xdeadbeef present but stale -> filtered out
     assert!(batch[2].is_none()); // 0x000003e7 (999) absent
@@ -183,7 +177,7 @@ async fn test_verifier_on(contract_wasm: Vec<u8>) -> testresult::TestResult<()> 
                 "max_package_count": 32,
             }),
         )
-        .read_only()
+        .read_only_borsh()
         .fetch_from(&sandbox_network)
         .await;
     assert!(res.is_err(), "tampered payload should fail verification");

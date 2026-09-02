@@ -164,6 +164,7 @@ impl PullVerifier {
     /// # Returns
     /// `Some(feed)` if present and fresh; `None` if the feed is absent or its
     /// timestamp is out of range (so callers can fall back or skip).
+    #[result_serializer(borsh)]
     pub fn get_verified_feed_data(
         &self,
         feed_id: String,
@@ -196,6 +197,7 @@ impl PullVerifier {
     /// One entry per input id, index-aligned: `Some(feed)` if present and fresh,
     /// else `None` when that feed is absent or its timestamp is out of range.
     /// An empty `feed_ids` yields an empty vector.
+    #[result_serializer(borsh)]
     pub fn get_verified_feed_data_batch(
         &self,
         feed_ids: Vec<String>,
@@ -230,6 +232,7 @@ impl PullVerifier {
     /// # Returns
     /// `Some(feed)` if present (possibly stale — callers MUST inspect
     /// `FeedData::timestamp`), or `None` if the feed is absent.
+    #[result_serializer(borsh)]
     pub fn get_feed_data_unchecked(
         &self,
         feed_id: String,
@@ -254,6 +257,7 @@ impl PullVerifier {
     /// One entry per input id, index-aligned: `Some(feed)` if present, else
     /// `None`. Feeds may be stale — callers MUST inspect each
     /// `FeedData::timestamp`. An empty `feed_ids` yields an empty vector.
+    #[result_serializer(borsh)]
     pub fn get_feed_data_unchecked_batch(
         &self,
         feed_ids: Vec<String>,
@@ -337,7 +341,6 @@ mod tests {
     use ::hex::encode as hex_encode;
     use alloy::signers::local::PrivateKeySigner;
     use near_sdk::{
-        json_types::U128,
         test_utils::{VMContextBuilder, accounts, get_logs},
         testing_env,
     };
@@ -620,7 +623,7 @@ mod tests {
                     MAX_PACKAGE_COUNT,
                 )
                 .expect("present feed is returned regardless of age");
-            assert_eq!(feed.price, U128(99));
+            assert_eq!(feed.price, 99);
             assert_eq!(feed.timestamp, 1_700_000_050);
         }
 
@@ -783,12 +786,12 @@ mod tests {
 
             assert_eq!(out.len(), 3);
             // feed 2, stale but returned
-            assert_eq!(out[0].as_ref().unwrap().price, U128(99));
+            assert_eq!(out[0].as_ref().unwrap().price, 99);
             assert_eq!(out[0].as_ref().unwrap().timestamp, 1_700_000_050);
             // feed 999 absent
             assert!(out[1].is_none());
             // feed 1, stale but returned
-            assert_eq!(out[2].as_ref().unwrap().price, U128(42));
+            assert_eq!(out[2].as_ref().unwrap().price, 42);
             assert_eq!(out[2].as_ref().unwrap().timestamp, 1_700_000_000);
         }
 
@@ -826,11 +829,11 @@ mod tests {
             assert_eq!(out.len(), 2);
 
             let first = out[0].as_ref().unwrap();
-            assert_eq!(first.price, U128(99));
+            assert_eq!(first.price, 99);
             assert_eq!(first.timestamp, 1_700_000_050);
 
             let second = out[1].as_ref().unwrap();
-            assert_eq!(second.price, U128(99));
+            assert_eq!(second.price, 99);
             assert_eq!(second.timestamp, 1_700_000_050);
         }
 
@@ -910,7 +913,7 @@ mod tests {
                     10,
                 )
                 .expect("feed should be present and fresh");
-            assert_eq!(feed.price, U128(42));
+            assert_eq!(feed.price, 42);
             assert_eq!(feed.timestamp, 1_700_000_000);
         }
 
@@ -1143,11 +1146,11 @@ mod tests {
             assert_eq!(out.len(), 3);
             // feed 2
             let f2 = out[0].as_ref().unwrap();
-            assert_eq!(f2.price, U128(99));
+            assert_eq!(f2.price, 99);
             assert_eq!(f2.timestamp, 1_700_000_050);
             // feed 1
             let f1 = out[1].as_ref().unwrap();
-            assert_eq!(f1.price, U128(42));
+            assert_eq!(f1.price, 42);
             assert_eq!(f1.timestamp, 1_700_000_000);
             // feed 999 absent
             assert!(out[2].is_none());
@@ -1198,7 +1201,7 @@ mod tests {
             assert_eq!(out.len(), 2);
             assert!(out[0].is_none()); // feed 1 too old
             let f2 = out[1].as_ref().unwrap();
-            assert_eq!(f2.price, U128(99)); // feed 2 still fresh
+            assert_eq!(f2.price, 99); // feed 2 still fresh
             assert_eq!(f2.timestamp, 1_700_000_050);
         }
 

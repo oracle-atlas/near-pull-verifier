@@ -65,7 +65,9 @@ impl Consumer {
     pub fn on_price(
         &mut self,
         feed_id: String,
-        #[callback_result] result: Result<Option<FeedData>, PromiseError>,
+        #[callback_result]
+        #[serializer(borsh)]
+        result: Result<Option<FeedData>, PromiseError>,
     ) {
         match result {
             Ok(Some(feed)) => {

@@ -16,7 +16,7 @@
 //! Signed data = Packages || Count; the Signature (r||s||v, Ethereum v 27/28)
 //! and Magic Marker are not part of the signed data.
 
-use near_sdk::{env, json_types::U128, require};
+use near_sdk::{env, require};
 
 use crate::hex::from_hex;
 use crate::types::{EVM_ADDRESS_LEN, EvmAddress, FeedData, Secp256k1PublicKey};
@@ -180,7 +180,7 @@ fn decode_package(chunk: &[u8]) -> FeedData {
     let timestamp =
         be_bytes_to_u64(&chunk[FEED_ID_LEN + VALUE_LEN..FEED_ID_LEN + VALUE_LEN + TIMESTAMP_LEN]);
     FeedData {
-        price: U128(value),
+        price: value,
         timestamp,
     }
 }
@@ -392,7 +392,7 @@ pub mod tests {
             chunk[PACKAGE_LEN - 1] = 5; // timestamp low byte -> 5
 
             let feed = decode_package(&chunk);
-            assert_eq!(feed.price, U128(42));
+            assert_eq!(feed.price, 42);
             assert_eq!(feed.timestamp, 5);
         }
 
@@ -406,7 +406,7 @@ pub mod tests {
             chunk[PACKAGE_LEN - 2] = 0x01;
 
             let feed = decode_package(&chunk);
-            assert_eq!(feed.price, U128(256));
+            assert_eq!(feed.price, 256);
             assert_eq!(feed.timestamp, 256);
         }
     }
@@ -443,16 +443,16 @@ pub mod tests {
 
             // A middle package is found and decoded.
             let f = find_feed(&payload, packages_end, &20u32.to_be_bytes()).unwrap();
-            assert_eq!(f.price, U128(200));
+            assert_eq!(f.price, 200);
             assert_eq!(f.timestamp, 2);
 
             // First and last also resolve to their own data.
             let first = find_feed(&payload, packages_end, &10u32.to_be_bytes()).unwrap();
-            assert_eq!(first.price, U128(100));
+            assert_eq!(first.price, 100);
             assert_eq!(first.timestamp, 1);
 
             let last = find_feed(&payload, packages_end, &30u32.to_be_bytes()).unwrap();
-            assert_eq!(last.price, U128(300));
+            assert_eq!(last.price, 300);
             assert_eq!(last.timestamp, 3);
         }
 
@@ -473,7 +473,7 @@ pub mod tests {
             let packages_end = parse_metadata(&payload, MAX_PACKAGE_COUNT);
 
             let f = find_feed(&payload, packages_end, &7u32.to_be_bytes()).unwrap();
-            assert_eq!(f.price, U128(100)); // first match wins
+            assert_eq!(f.price, 100); // first match wins
             assert_eq!(f.timestamp, 1);
         }
     }

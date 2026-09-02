@@ -10,8 +10,9 @@ pub type Seconds = u64;
 
 /// A single decoded Feed Data package: price + aggregation timestamp.
 ///
-/// Must match the verifier's `FeedData` borsh layout (same field order and
-/// types) so the cross-contract callback can decode the result correctly.
+/// Must match the verifier's `FeedData` borsh layout (same field order; `U128`
+/// serializes as `u128`): the verifier returns borsh (`#[result_serializer(borsh)]`)
+/// and `on_price`'s callback argument decodes it with `#[serializer(borsh)]`.
 #[near(serializers = [json, borsh])]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FeedData {
