@@ -8,6 +8,13 @@ The consumer can therefore trust a price's origin cryptographically — no need 
 
 The getters are read-only, so they can also be called for **free** via an RPC view call (off-chain frontends and indexers). On-chain consumers call them via a cross-contract call and read the result in a callback — see [Building a consumer contract](#building-a-consumer-contract).
 
+## Deployed contracts
+
+| Network | Account ID |
+|---------|------------|
+| Mainnet | [`pull-verifier.atlas-oracle.near`](https://nearblocks.io/address/pull-verifier.atlas-oracle.near) |
+| Testnet | [`pull-verifier.atlas-oracle.testnet`](https://testnet.nearblocks.io/address/pull-verifier.atlas-oracle.testnet) |
+
 ## Payload layout
 
 The payload is laid out and parsed **from the tail**:
@@ -66,6 +73,16 @@ All deployments and consumer contracts that verify this payload share a single *
 Consumer contracts that verify and parse the payload themselves embed the signer address locally, so when the oracle rotates or revokes a signer they must update their own contract to stay in sync — this drift across deployments during rotation is expected.
 
 Because the same signature is trusted across the whole domain, we keep the signing key dedicated to this Pull Oracle payload format and do not reuse it for other protocols or other message formats.
+
+## Security considerations
+
+The contract has been audited by CertiK — see [`audits/CertiK-Audit-Atlas-NEAR.pdf`](https://github.com/oracle-atlas/near-pull-verifier/blob/main/audits/CertiK-Audit-Atlas-NEAR.pdf). One property of the stateless design deserves explicit attention when integrating.
+
+### Price-data replay awareness
+
+The payload is stateless: it binds to no caller and carries no per-use nonce. The same signed blob can be resubmitted by any account while its timestamps remain within the freshness window (bounded by the consumer's `max_delay` / `max_future_drift`), and since NEAR transactions and receipts are public chain data, observers can copy a payload from an explorer (or from any transaction that used it) and replay it — to the same verifier, or to any other consumer that trusts the same signer (see [Signature trust domain](#signature-trust-domain)). Within the window, multiple signed payloads for the same feed can coexist, so an observer could select the most favorable one. This is an intentional trade-off of the stateless design.
+
+If your protocol is price-selection sensitive (lending, staking, liquidation), add safeguards in the consumer contract: track the highest timestamp consumed per feed and reject regressions, apply per-user cooldowns, or gate the entry point to trusted callers via `predecessor_account_id`.
 
 ## Building a consumer contract
 
